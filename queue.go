@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync/atomic"
+	"time"
 )
 
 var (
 	DefaultNumOfMessages int32 = 16
+	DefaultQPSLimit      int32 = 2000
 )
 
 const (
@@ -33,9 +36,13 @@ type MNSQueue struct {
 	name     string
 	client   MNSClient
 	stopChan chan bool
+	qpsLimit int32
+	qps      int32
+
+	totalQueryPerThreeSec int32
 }
 
-func NewMNSQueue(name string, client MNSClient) AliMNSQueue {
+func NewMNSQueue(name string, client MNSClient, qps ...int32) AliMNSQueue {
 	if name == "" {
 		panic("ali_mns: queue name could not be empty")
 	}
@@ -44,6 +51,11 @@ func NewMNSQueue(name string, client MNSClient) AliMNSQueue {
 	queue.client = client
 	queue.name = name
 	queue.stopChan = make(chan bool)
+	queue.qpsLimit = DefaultQPSLimit
+
+	if qps != nil && len(qps) == 1 && qps[0] > 0 {
+		queue.qpsLimit = qps[0]
+	}
 
 	proxyURL := ""
 	queueProxyEnvKey := PROXY_PREFIX + strings.Replace(strings.ToUpper(name), "-", "_", -1)
@@ -57,7 +69,26 @@ func NewMNSQueue(name string, client MNSClient) AliMNSQueue {
 		queue.client.SetProxy(proxyURL)
 	}
 
+	go queue.beginCalculateQPS()
+
 	return queue
+}
+
+func (p *MNSQueue) beginCalculateQPS() {
+	uptime := time.Now()
+	p.totalQueryPerThreeSec = 0
+	for {
+		totalSeconds := time.Now().Sub(uptime).Seconds()
+		if totalSeconds > (time.Second * 3).Seconds() {
+			uptime = time.Now().Add(-time.Second)
+			atomic.SwapInt32(&p.totalQueryPerThreeSec, p.qps)
+			continue
+		}
+
+		p.qps = int32(float64(p.totalQueryPerThreeSec) / totalSeconds)
+
+		time.Sleep(time.Second)
+	}
 }
 
 func (p *MNSQueue) Name() string {
@@ -102,6 +133,8 @@ func (p *MNSQueue) ReceiveMessage(respChan chan MessageReceiveResponse, errChan 
 			respChan <- resp
 		}
 
+		p.updateCounterAndCheckQPS()
+
 		select {
 		case _ = <-p.stopChan:
 			{
@@ -133,6 +166,8 @@ func (p *MNSQueue) BatchReceiveMessage(respChan chan BatchMessageReceiveResponse
 			respChan <- resp
 		}
 
+		p.updateCounterAndCheckQPS()
+
 		select {
 		case _ = <-p.stopChan:
 			{
@@ -154,6 +189,8 @@ func (p *MNSQueue) PeekMessage(respChan chan MessageReceiveResponse, errChan cha
 		} else {
 			respChan <- resp
 		}
+
+		p.updateCounterAndCheckQPS()
 	}
 	return
 }
@@ -171,6 +208,8 @@ func (p *MNSQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, e
 		} else {
 			respChan <- resp
 		}
+
+		p.updateCounterAndCheckQPS()
 	}
 	return
 }
@@ -198,4 +237,12 @@ func (p *MNSQueue) BatchDeleteMessage(receiptHandles ...string) (err error) {
 func (p *MNSQueue) ChangeMessageVisibility(receiptHandle string, visibilityTimeout int64) (resp MessageVisibilityChangeResponse, err error) {
 	_, err = p.client.Send(_PUT, nil, nil, fmt.Sprintf("queues/%s/%s?ReceiptHandle=%s&VisibilityTimeout=%d", p.name, "messages", receiptHandle, visibilityTimeout), &resp)
 	return
+}
+
+func (p *MNSQueue) updateCounterAndCheckQPS() {
+	atomic.AddInt32(&p.totalQueryPerThreeSec, 1)
+
+	for p.qps > p.qpsLimit {
+		time.Sleep(time.Millisecond * 10)
+	}
 }

@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-
+	initMNSErrors()
 }
 
 const (
