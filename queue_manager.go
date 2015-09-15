@@ -12,9 +12,10 @@ import (
 type MNSLocation string
 
 const (
-	Beijing  MNSLocation = "beijing"
-	Hangzhou MNSLocation = "hangzhou"
-	Qingdao  MNSLocation = "qingdao"
+	Beijing   MNSLocation = "cn-beijing"
+	Hangzhou  MNSLocation = "cn-hangzhou"
+	Qingdao   MNSLocation = "cn-qingdao"
+	Singapore MNSLocation = "ap-southeast-1"
 )
 
 type AliQueueManager interface {
