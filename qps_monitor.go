@@ -24,10 +24,12 @@ func (p *QPSMonitor) Pulse() {
 
 func (p *QPSMonitor) QPS() int32 {
 	var totalCount int32 = 0
-	for _, queryCount := range p.totalQueries {
-		totalCount += queryCount
+	for i, queryCount := range p.totalQueries {
+		if int32(i) != p.latestIndex {
+			totalCount += queryCount
+		}
 	}
-	return totalCount / p.delaySecond
+	return totalCount / (p.delaySecond - 1)
 }
 
 func NewQPSMonitor(delaySecond int32) *QPSMonitor {
