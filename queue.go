@@ -102,7 +102,7 @@ func (p *MNSQueue) Stop() {
 
 func (p *MNSQueue) ReceiveMessage(respChan chan MessageReceiveResponse, errChan chan error, waitseconds ...int64) {
 	resource := fmt.Sprintf("queues/%s/%s", p.name, "messages")
-	if waitseconds != nil && len(waitseconds) == 1 {
+	if waitseconds != nil && len(waitseconds) == 1 && waitseconds[0] >= 0 {
 		resource = fmt.Sprintf("queues/%s/%s?waitseconds=%d", p.name, "messages", waitseconds[0])
 	}
 
@@ -135,7 +135,7 @@ func (p *MNSQueue) BatchReceiveMessage(respChan chan BatchMessageReceiveResponse
 	}
 
 	resource := fmt.Sprintf("queues/%s/%s?numOfMessages=%d", p.name, "messages", numOfMessages)
-	if waitseconds != nil && len(waitseconds) == 1 {
+	if waitseconds != nil && len(waitseconds) == 1 && waitseconds[0] >= 0 {
 		resource = fmt.Sprintf("queues/%s/%s?numOfMessages=%d&waitseconds=%d", p.name, "messages", numOfMessages, waitseconds[0])
 	}
 
