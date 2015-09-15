@@ -22,7 +22,7 @@ type AliQueueManager interface {
 	SetQueueAttributes(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
 	GetQueueAttributes(location MNSLocation, queueName string) (attr QueueAttribute, err error)
 	DeleteQueue(location MNSLocation, queueName string) (err error)
-	ListQueue(location MNSLocation, marker string, retNumber int32, prefix string) (queues Queues, err error)
+	ListQueue(location MNSLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error)
 }
 
 type MNSQueueManager struct {
@@ -130,7 +130,7 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns-cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -168,7 +168,7 @@ func (p *MNSQueueManager) SetQueueAttributes(location MNSLocation, queueName str
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns-cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -183,7 +183,7 @@ func (p *MNSQueueManager) GetQueueAttributes(location MNSLocation, queueName str
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns-cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -199,7 +199,7 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns-cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -208,17 +208,20 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 	return
 }
 
-func (p *MNSQueueManager) ListQueue(location MNSLocation, marker string, retNumber int32, prefix string) (queues Queues, err error) {
+func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error) {
 
-	url := fmt.Sprintf("http://%s.mns-cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
 	header := map[string]string{}
 
-	marker = strings.TrimSpace(marker)
-	if marker != "" {
-		header["x-mns-marker"] = marker
+	marker := ""
+	if nextMarker != nil && len(nextMarker) > 0 {
+		marker = strings.TrimSpace(string(nextMarker))
+		if marker != "" {
+			header["x-mns-marker"] = marker
+		}
 	}
 
 	if retNumber > 0 {
@@ -235,7 +238,7 @@ func (p *MNSQueueManager) ListQueue(location MNSLocation, marker string, retNumb
 		header["x-mns-prefix"] = prefix
 	}
 
-	_, err = cli.Send(_GET, header, nil, "queues/", &queues)
+	_, err = cli.Send(_GET, header, nil, "queues", &queues)
 
 	return
 }
