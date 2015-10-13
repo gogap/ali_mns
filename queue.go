@@ -226,7 +226,9 @@ func (p *MNSQueue) ChangeMessageVisibility(receiptHandle string, visibilityTimeo
 
 func (p *MNSQueue) checkQPS() {
 	p.qpsMonitor.Pulse()
-	for p.qpsMonitor.QPS() > p.qpsLimit {
-		time.Sleep(time.Millisecond * 10)
+	if p.qpsLimit > 0 {
+		for p.qpsMonitor.QPS() > p.qpsLimit {
+			time.Sleep(time.Millisecond * 10)
+		}
 	}
 }
