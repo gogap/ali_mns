@@ -131,7 +131,7 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -169,7 +169,7 @@ func (p *MNSQueueManager) SetQueueAttributes(location MNSLocation, queueName str
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -184,7 +184,7 @@ func (p *MNSQueueManager) GetQueueAttributes(location MNSLocation, queueName str
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -200,7 +200,7 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
@@ -211,7 +211,7 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 
 func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error) {
 
-	url := fmt.Sprintf("http://%s.mns.cn-%s.aliyuncs.com", p.ownerId, string(location))
+	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
