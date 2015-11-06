@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -35,14 +34,14 @@ func init() {
 }
 
 const (
-	_GET    Method = "GET"
-	_PUT           = "PUT"
-	_POST          = "POST"
-	_DELETE        = "DELETE"
+	GET    Method = "GET"
+	PUT           = "PUT"
+	POST          = "POST"
+	DELETE        = "DELETE"
 )
 
 type MNSClient interface {
-	Send(method Method, headers map[string]string, message interface{}, resource string, v interface{}) (statusCode int, err error)
+	Send(method Method, headers map[string]string, message interface{}, resource string) (resp *http.Response, err error)
 	SetProxy(url string)
 }
 
@@ -89,12 +88,12 @@ func NewAliMNSClient(url, accessKeyId, accessKeySecret string) MNSClient {
 }
 
 func (p *AliMNSClient) SetProxy(url string) {
-	p.url = url
+	p.proxyURL = url
 }
 
 func (p *AliMNSClient) proxy(req *http.Request) (*url.URL, error) {
-	if p.url != "" {
-		return url.Parse(p.url)
+	if p.proxyURL != "" {
+		return url.Parse(p.proxyURL)
 	}
 	return nil, nil
 }
@@ -109,7 +108,7 @@ func (p *AliMNSClient) authorization(method Method, headers map[string]string, r
 	return
 }
 
-func (p *AliMNSClient) Send(method Method, headers map[string]string, message interface{}, resource string, v interface{}) (statusCode int, err error) {
+func (p *AliMNSClient) Send(method Method, headers map[string]string, message interface{}, resource string) (resp *http.Response, err error) {
 	var xmlContent []byte
 
 	if message == nil {
@@ -159,35 +158,11 @@ func (p *AliMNSClient) Send(method Method, headers map[string]string, message in
 		req.Header.Add(header, value)
 	}
 
-	var resp *http.Response
 	if resp, err = p.client.Do(req); err != nil {
 		err = ERR_SEND_REQUEST_FAILED.New(errors.Params{"err": err})
 		return
 	}
 
-	if resp != nil {
-		defer resp.Body.Close()
-		statusCode = resp.StatusCode
-		if bBody, e := ioutil.ReadAll(resp.Body); e != nil {
-			err = ERR_READ_RESPONSE_BODY_FAILED.New(errors.Params{"err": e})
-			return
-		} else if resp.StatusCode != http.StatusCreated &&
-			resp.StatusCode != http.StatusOK &&
-			resp.StatusCode != http.StatusNoContent {
-			errResp := ErrorMessageResponse{}
-			if e := xml.Unmarshal(bBody, &errResp); e != nil {
-				err = ERR_UNMARSHAL_ERROR_RESPONSE_FAILED.New(errors.Params{"err": e})
-				return
-			}
-			err = to_error(errResp, resource)
-			return
-		} else if v != nil {
-			if e := xml.Unmarshal(bBody, v); e != nil {
-				err = ERR_UNMARSHAL_RESPONSE_FAILED.New(errors.Params{"err": e})
-				return
-			}
-		}
-	}
 	return
 }
 

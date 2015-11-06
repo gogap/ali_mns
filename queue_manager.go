@@ -31,6 +31,8 @@ type MNSQueueManager struct {
 	credential      Credential
 	accessKeyId     string
 	accessKeySecret string
+
+	decoder MNSDecoder
 }
 
 func checkQueueName(queueName string) (err error) {
@@ -86,6 +88,7 @@ func NewMNSQueueManager(ownerId, accessKeyId, accessKeySecret string) AliQueueMa
 		ownerId:         ownerId,
 		accessKeyId:     accessKeyId,
 		accessKeySecret: accessKeySecret,
+		decoder:         new(AliMNSDecoder),
 	}
 }
 
@@ -136,7 +139,7 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
 	var code int
-	code, err = cli.Send(_PUT, nil, &message, "queues/"+queueName, nil)
+	code, err = send(cli, p.decoder, PUT, nil, &message, "queues/"+queueName, nil)
 
 	if code == http.StatusNoContent {
 		err = ERR_MNS_QUEUE_ALREADY_EXIST_AND_HAVE_SAME_ATTR.New(errors.Params{"name": queueName})
@@ -173,7 +176,7 @@ func (p *MNSQueueManager) SetQueueAttributes(location MNSLocation, queueName str
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
-	_, err = cli.Send(_PUT, nil, &message, fmt.Sprintf("queues/%s?metaoverride=true", queueName), nil)
+	_, err = send(cli, p.decoder, PUT, nil, &message, fmt.Sprintf("queues/%s?metaoverride=true", queueName), nil)
 	return
 }
 
@@ -188,7 +191,7 @@ func (p *MNSQueueManager) GetQueueAttributes(location MNSLocation, queueName str
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
-	_, err = cli.Send(_GET, nil, nil, "queues/"+queueName, &attr)
+	_, err = send(cli, p.decoder, GET, nil, nil, "queues/"+queueName, &attr)
 
 	return
 }
@@ -204,7 +207,7 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
-	_, err = cli.Send(_DELETE, nil, nil, "queues/"+queueName, nil)
+	_, err = send(cli, p.decoder, DELETE, nil, nil, "queues/"+queueName, nil)
 
 	return
 }
@@ -239,7 +242,7 @@ func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker Base64Bytes
 		header["x-mns-prefix"] = prefix
 	}
 
-	_, err = cli.Send(_GET, header, nil, "queues", &queues)
+	_, err = send(cli, p.decoder, GET, header, nil, "queues", &queues)
 
 	return
 }
