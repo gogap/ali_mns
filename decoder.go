@@ -12,6 +12,10 @@ type MNSDecoder interface {
 type AliMNSDecoder struct {
 }
 
+func NewAliMNSDecoder() MNSDecoder {
+	return &AliMNSDecoder{}
+}
+
 func (p *AliMNSDecoder) Decode(reader io.Reader, v interface{}) (err error) {
 	decoder := xml.NewDecoder(reader)
 	err = decoder.Decode(&v)

@@ -114,11 +114,18 @@ func (p *AliMNSClient) Send(method Method, headers map[string]string, message in
 	if message == nil {
 		xmlContent = []byte{}
 	} else {
-		if bXml, e := xml.Marshal(message); e != nil {
-			err = ERR_MARSHAL_MESSAGE_FAILED.New(errors.Params{"err": e})
-			return
-		} else {
-			xmlContent = bXml
+		switch m := message.(type) {
+		case []byte:
+			{
+				xmlContent = m
+			}
+		default:
+			if bXml, e := xml.Marshal(message); e != nil {
+				err = ERR_MARSHAL_MESSAGE_FAILED.New(errors.Params{"err": e})
+				return
+			} else {
+				xmlContent = bXml
+			}
 		}
 	}
 
@@ -196,7 +203,7 @@ func initMNSErrors() {
 	}
 }
 
-func to_error(resp ErrorMessageResponse, resource string) (err error) {
+func ParseError(resp ErrorMessageResponse, resource string) (err error) {
 	if errCodeTemplate, exist := errMapping[resp.Code]; exist {
 		err = errCodeTemplate.New(errors.Params{"resp": resp, "resource": resource})
 	} else {

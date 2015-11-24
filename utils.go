@@ -25,7 +25,7 @@ func send(client MNSClient, decoder MNSDecoder, method Method, headers map[strin
 				err = ERR_UNMARSHAL_ERROR_RESPONSE_FAILED.New(errors.Params{"err": e})
 				return
 			}
-			err = to_error(errResp, resource)
+			err = ParseError(errResp, resource)
 			return
 		}
 
