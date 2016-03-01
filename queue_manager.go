@@ -60,7 +60,7 @@ func checkMaxMessageSize(maxSize int32) (err error) {
 }
 
 func checkMessageRetentionPeriod(retentionPeriod int32) (err error) {
-	if retentionPeriod < 60 || retentionPeriod > 129600 {
+	if retentionPeriod < 60 || retentionPeriod > 1296000 {
 		err = ERR_MNS_MSG_RETENTION_PERIOD_RANGE_ERROR.New()
 		return
 	}
