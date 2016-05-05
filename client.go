@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gogap/errors"
@@ -51,6 +53,8 @@ type AliMNSClient struct {
 	accessKeyId string
 	client      *http.Client
 	proxyURL    string
+
+	clientLocker sync.Mutex
 }
 
 func NewAliMNSClient(url, accessKeyId, accessKeySecret string) MNSClient {
@@ -65,28 +69,44 @@ func NewAliMNSClient(url, accessKeyId, accessKeySecret string) MNSClient {
 	aliMNSClient.accessKeyId = accessKeyId
 	aliMNSClient.url = url
 
-	timeoutInt := DefaultTimeout
-
-	if aliMNSClient.Timeout > 0 {
-		timeoutInt = aliMNSClient.Timeout
+	if globalurl := os.Getenv(GLOBAL_PROXY); globalurl != "" {
+		aliMNSClient.proxyURL = globalurl
 	}
 
-	timeout := time.Second * time.Duration(timeoutInt)
-
-	transport := &httpclient.Transport{
-		Proxy:                 aliMNSClient.proxy,
-		ConnectTimeout:        time.Second * 3,
-		RequestTimeout:        timeout,
-		ResponseHeaderTimeout: timeout + time.Second,
-	}
-
-	aliMNSClient.client = &http.Client{Transport: transport}
+	aliMNSClient.initClient()
 
 	return aliMNSClient
 }
 
 func (p *AliMNSClient) SetProxy(url string) {
+	if url == p.proxyURL {
+		return
+	}
+
 	p.proxyURL = url
+}
+
+func (p *AliMNSClient) initClient() {
+
+	p.clientLocker.Lock()
+	defer p.clientLocker.Unlock()
+
+	timeoutInt := DefaultTimeout
+
+	if p.Timeout > 0 {
+		timeoutInt = p.Timeout
+	}
+
+	timeout := time.Second * time.Duration(timeoutInt)
+
+	transport := &httpclient.Transport{
+		Proxy:                 p.proxy,
+		ConnectTimeout:        time.Second * 3,
+		RequestTimeout:        timeout,
+		ResponseHeaderTimeout: timeout + time.Second,
+	}
+
+	p.client = &http.Client{Transport: transport}
 }
 
 func (p *AliMNSClient) proxy(req *http.Request) (*url.URL, error) {

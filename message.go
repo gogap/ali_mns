@@ -103,9 +103,9 @@ type Queue struct {
 }
 
 type Queues struct {
-	XMLName    xml.Name    `xml:"Queues" json:"-"`
-	Queues     []Queue     `xml:"Queue" json:"queues"`
-	NextMarker Base64Bytes `xml:"NextMarker" json:"next_marker"`
+	XMLName    xml.Name `xml:"Queues" json:"-"`
+	Queues     []Queue  `xml:"Queue" json:"queues"`
+	NextMarker string   `xml:"NextMarker" json:"next_marker"`
 }
 
 type Base64Bytes []byte

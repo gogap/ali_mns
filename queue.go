@@ -60,13 +60,9 @@ func NewMNSQueue(name string, client MNSClient, qps ...int32) AliMNSQueue {
 	queueProxyEnvKey := PROXY_PREFIX + strings.Replace(strings.ToUpper(name), "-", "_", -1)
 	if url := os.Getenv(queueProxyEnvKey); url != "" {
 		proxyURL = url
-	} else if globalurl := os.Getenv(GLOBAL_PROXY); globalurl != "" {
-		proxyURL = globalurl
 	}
 
-	if proxyURL != "" {
-		queue.client.SetProxy(proxyURL)
-	}
+	client.SetProxy(proxyURL)
 
 	queue.qpsMonitor = NewQPSMonitor(5)
 

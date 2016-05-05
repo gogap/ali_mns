@@ -23,7 +23,7 @@ type AliQueueManager interface {
 	SetQueueAttributes(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
 	GetQueueAttributes(location MNSLocation, queueName string) (attr QueueAttribute, err error)
 	DeleteQueue(location MNSLocation, queueName string) (err error)
-	ListQueue(location MNSLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error)
+	ListQueue(location MNSLocation, nextMarker string, retNumber int32, prefix string) (queues Queues, err error)
 }
 
 type MNSQueueManager struct {
@@ -212,7 +212,7 @@ func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (e
 	return
 }
 
-func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error) {
+func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker string, retNumber int32, prefix string) (queues Queues, err error) {
 
 	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
 
@@ -220,9 +220,8 @@ func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker Base64Bytes
 
 	header := map[string]string{}
 
-	marker := ""
-	if nextMarker != nil && len(nextMarker) > 0 {
-		marker = strings.TrimSpace(string(nextMarker))
+	marker := strings.TrimSpace(nextMarker)
+	if len(marker) > 0 {
 		if marker != "" {
 			header["x-mns-marker"] = marker
 		}
