@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gogap/errors"
@@ -46,13 +45,12 @@ type MNSClient interface {
 }
 
 type AliMNSClient struct {
-	Timeout      int64
-	url          string
-	credential   Credential
-	accessKeyId  string
-	clientLocker sync.Mutex
-	client       *http.Client
-	proxyURL     string
+	Timeout     int64
+	url         string
+	credential  Credential
+	accessKeyId string
+	client      *http.Client
+	proxyURL    string
 }
 
 func NewAliMNSClient(url, accessKeyId, accessKeySecret string) MNSClient {
@@ -151,9 +149,6 @@ func (p *AliMNSClient) Send(method Method, headers map[string]string, message in
 	url := p.url + "/" + resource
 
 	postBodyReader := strings.NewReader(string(xmlContent))
-
-	p.clientLocker.Lock()
-	defer p.clientLocker.Unlock()
 
 	var req *http.Request
 	if req, err = http.NewRequest(string(method), url, postBodyReader); err != nil {
