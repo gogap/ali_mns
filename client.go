@@ -206,7 +206,6 @@ func initMNSErrors() {
 		"MissingReceiptHandle":       ERR_MNS_MISSING_RECEIPT_HANDLE,
 		"MissingVisibilityTimeout":   ERR_MNS_MISSING_VISIBILITY_TIMEOUT,
 		"MessageNotExist":            ERR_MNS_MESSAGE_NOT_EXIST,
-		"QueueAlreadyExist":          ERR_MNS_QUEUE_ALREADY_EXIST,
 		"QueueDeletedRecently":       ERR_MNS_QUEUE_DELETED_RECENTLY,
 		"InvalidQueueName":           ERR_MNS_INVALID_QUEUE_NAME,
 		"QueueNameLengthError":       ERR_MNS_QUEUE_NAME_LENGTH_ERROR,

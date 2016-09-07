@@ -139,11 +139,23 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
 
 	var code int
-	code, err = send(cli, p.decoder, PUT, nil, &message, "queues/"+queueName, nil)
-
-	if code == http.StatusNoContent {
-		err = ERR_MNS_QUEUE_ALREADY_EXIST_AND_HAVE_SAME_ATTR.New(errors.Params{"name": queueName})
+	if code, err = send(cli, p.decoder, PUT, nil, &message, "queues/"+queueName, nil); err != nil {
 		return
+	}
+
+	switch code {
+	case http.StatusOK:
+		return
+	case http.StatusNoContent:
+		{
+			err = ERR_MNS_QUEUE_ALREADY_EXIST_AND_HAVE_SAME_ATTR.New(errors.Params{"name": queueName})
+			return
+		}
+	case http.StatusConflict:
+		{
+			err = ERR_MNS_QUEUE_ALREADY_EXIST.New(errors.Params{"name": queueName})
+			return
+		}
 	}
 
 	return

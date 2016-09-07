@@ -40,7 +40,6 @@ var (
 	ERR_MNS_MISSING_RECEIPT_HANDLE       = errors.TN(ALI_MNS_ERR_NS, 113, ali_MNS_ERR_TEMPSTR)
 	ERR_MNS_MISSING_VISIBILITY_TIMEOUT   = errors.TN(ALI_MNS_ERR_NS, 114, ali_MNS_ERR_TEMPSTR)
 	ERR_MNS_MESSAGE_NOT_EXIST            = errors.TN(ALI_MNS_ERR_NS, 115, ali_MNS_ERR_TEMPSTR)
-	ERR_MNS_QUEUE_ALREADY_EXIST          = errors.TN(ALI_MNS_ERR_NS, 116, ali_MNS_ERR_TEMPSTR)
 	ERR_MNS_QUEUE_DELETED_RECENTLY       = errors.TN(ALI_MNS_ERR_NS, 117, ali_MNS_ERR_TEMPSTR)
 	ERR_MNS_INVALID_QUEUE_NAME           = errors.TN(ALI_MNS_ERR_NS, 118, ali_MNS_ERR_TEMPSTR)
 	ERR_MNS_INVALID_VERSION_HEADER       = errors.TN(ALI_MNS_ERR_NS, 119, ali_MNS_ERR_TEMPSTR)
@@ -61,4 +60,5 @@ var (
 	ERR_MNS_MSG_POOLLING_WAIT_SECONDS_RANGE_ERROR  = errors.TN(ALI_MNS_ERR_NS, 131, "message poolling wait seconds is not in range of (0~30)")
 	REE_MNS_GET_QUEUE_RET_NUMBER_RANGE_ERROR       = errors.TN(ALI_MNS_ERR_NS, 132, "get queue list param of ret number is not in range of (1~1000)")
 	ERR_MNS_QUEUE_ALREADY_EXIST_AND_HAVE_SAME_ATTR = errors.TN(ALI_MNS_ERR_NS, 133, "mns queue already exist, and the attribute is the same, queue name: {{.name}}")
+	ERR_MNS_QUEUE_ALREADY_EXIST                    = errors.TN(ALI_MNS_ERR_NS, 134, "mns queue already exist, and has different attribute, queue name: {{.name}}")
 )
