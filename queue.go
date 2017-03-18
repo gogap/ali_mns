@@ -258,6 +258,7 @@ func (p *MNSQueue) checkQPS() {
 	p.qpsMonitor.Pulse()
 	if p.qpsLimit > 0 {
 		for p.qpsMonitor.QPS() > p.qpsLimit {
+			p.qpsMonitor.Pulse()
 			time.Sleep(time.Millisecond * 10)
 		}
 	}
