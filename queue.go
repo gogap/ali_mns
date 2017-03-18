@@ -23,8 +23,8 @@ type AliMNSQueue interface {
 	BatchSendMessage(messages ...MessageSendRequest) (resp BatchMessageSendResponse, err error)
 	ReceiveMessage(respChan chan MessageReceiveResponse, errChan chan error, waitseconds ...int64)
 	BatchReceiveMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32, waitseconds ...int64)
-	PeekMessage(respChan chan MessageReceiveResponse, errChan chan error)
-	BatchPeekMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32)
+	PeekMessage(respChan chan MessageReceiveResponse, errChan chan error, interval ...time.Duration)
+	BatchPeekMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32, interval ...time.Duration)
 	DeleteMessage(receiptHandle string) (err error)
 	BatchDeleteMessage(receiptHandles ...string) (err error)
 	ChangeMessageVisibility(receiptHandle string, visibilityTimeout int64) (resp MessageVisibilityChangeResponse, err error)
@@ -160,24 +160,46 @@ func (p *MNSQueue) BatchReceiveMessage(respChan chan BatchMessageReceiveResponse
 	return
 }
 
-func (p *MNSQueue) PeekMessage(respChan chan MessageReceiveResponse, errChan chan error) {
+func (p *MNSQueue) PeekMessage(respChan chan MessageReceiveResponse, errChan chan error, interval ...time.Duration) {
+	resource := fmt.Sprintf("queues/%s/%s?peekonly=true", p.name, "messages")
+
+	itv := time.Duration(0)
+	if len(interval) == 1 {
+		itv = interval[0]
+	}
+
 	for {
 		resp := MessageReceiveResponse{}
-		_, err := send(p.client, p.decoder, GET, nil, nil, fmt.Sprintf("queues/%s/%s?peekonly=true", p.name, "messages"), &resp)
+		_, err := send(p.client, p.decoder, GET, nil, nil, resource, &resp)
 		if err != nil {
 			errChan <- err
 		} else {
 			respChan <- resp
 		}
 
-		p.checkQPS()
+		if itv > 0 {
+			time.Sleep(itv)
+		}
+
+		select {
+		case _ = <-p.stopChan:
+			{
+				return
+			}
+		default:
+		}
 	}
 	return
 }
 
-func (p *MNSQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32) {
+func (p *MNSQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32, interval ...time.Duration) {
 	if numOfMessages <= 0 {
 		numOfMessages = DefaultNumOfMessages
+	}
+
+	itv := time.Duration(0)
+	if len(interval) == 1 {
+		itv = interval[0]
 	}
 
 	for {
@@ -189,7 +211,17 @@ func (p *MNSQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, e
 			respChan <- resp
 		}
 
-		p.checkQPS()
+		if itv > 0 {
+			time.Sleep(itv)
+		}
+
+		select {
+		case _ = <-p.stopChan:
+			{
+				return
+			}
+		default:
+		}
 	}
 	return
 }
