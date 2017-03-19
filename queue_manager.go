@@ -9,25 +9,15 @@ import (
 	"github.com/gogap/errors"
 )
 
-type MNSLocation string
-
-const (
-	Beijing   MNSLocation = "cn-beijing"
-	Hangzhou  MNSLocation = "cn-hangzhou"
-	Qingdao   MNSLocation = "cn-qingdao"
-	Singapore MNSLocation = "ap-southeast-1"
-)
-
 type AliQueueManager interface {
-	CreateQueue(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
-	SetQueueAttributes(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
-	GetQueueAttributes(location MNSLocation, queueName string) (attr QueueAttribute, err error)
-	DeleteQueue(location MNSLocation, queueName string) (err error)
-	ListQueue(location MNSLocation, nextMarker string, retNumber int32, prefix string) (queues Queues, err error)
+	CreateQueue(endpoint string, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
+	SetQueueAttributes(endpoint string, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
+	GetQueueAttributes(endpoint string, queueName string) (attr QueueAttribute, err error)
+	DeleteQueue(endpoint string, queueName string) (err error)
+	ListQueue(endpoint string, nextMarker string, retNumber int32, prefix string) (queues Queues, err error)
 }
 
 type MNSQueueManager struct {
-	ownerId         string
 	credential      Credential
 	accessKeyId     string
 	accessKeySecret string
@@ -83,9 +73,8 @@ func checkPollingWaitSeconds(pollingWaitSeconds int32) (err error) {
 	return
 }
 
-func NewMNSQueueManager(ownerId, accessKeyId, accessKeySecret string) AliQueueManager {
+func NewMNSQueueManager(accessKeyId, accessKeySecret string) AliQueueManager {
 	return &MNSQueueManager{
-		ownerId:         ownerId,
 		accessKeyId:     accessKeyId,
 		accessKeySecret: accessKeySecret,
 		decoder:         new(AliMNSDecoder),
@@ -111,7 +100,7 @@ func checkAttributes(delaySeconds int32, maxMessageSize int32, messageRetentionP
 	return
 }
 
-func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
+func (p *MNSQueueManager) CreateQueue(endpoint string, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
@@ -134,9 +123,7 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
-
-	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
+	cli := NewAliMNSClient(endpoint, p.accessKeyId, p.accessKeySecret)
 
 	var code int
 	if code, err = send(cli, p.decoder, PUT, nil, &message, "queues/"+queueName, nil); err != nil {
@@ -161,7 +148,7 @@ func (p *MNSQueueManager) CreateQueue(location MNSLocation, queueName string, de
 	return
 }
 
-func (p *MNSQueueManager) SetQueueAttributes(location MNSLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
+func (p *MNSQueueManager) SetQueueAttributes(endpoint string, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
@@ -184,51 +171,43 @@ func (p *MNSQueueManager) SetQueueAttributes(location MNSLocation, queueName str
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
-
-	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
+	cli := NewAliMNSClient(endpoint, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, PUT, nil, &message, fmt.Sprintf("queues/%s?metaoverride=true", queueName), nil)
 	return
 }
 
-func (p *MNSQueueManager) GetQueueAttributes(location MNSLocation, queueName string) (attr QueueAttribute, err error) {
+func (p *MNSQueueManager) GetQueueAttributes(endpoint string, queueName string) (attr QueueAttribute, err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
-
-	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
+	cli := NewAliMNSClient(endpoint, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, GET, nil, nil, "queues/"+queueName, &attr)
 
 	return
 }
 
-func (p *MNSQueueManager) DeleteQueue(location MNSLocation, queueName string) (err error) {
+func (p *MNSQueueManager) DeleteQueue(endpoint string, queueName string) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
 		return
 	}
 
-	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
-
-	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
+	cli := NewAliMNSClient(endpoint, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, DELETE, nil, nil, "queues/"+queueName, nil)
 
 	return
 }
 
-func (p *MNSQueueManager) ListQueue(location MNSLocation, nextMarker string, retNumber int32, prefix string) (queues Queues, err error) {
+func (p *MNSQueueManager) ListQueue(endpoint string, nextMarker string, retNumber int32, prefix string) (queues Queues, err error) {
 
-	url := fmt.Sprintf("http://%s.mns.%s.aliyuncs.com", p.ownerId, string(location))
-
-	cli := NewAliMNSClient(url, p.accessKeyId, p.accessKeySecret)
+	cli := NewAliMNSClient(endpoint, p.accessKeyId, p.accessKeySecret)
 
 	header := map[string]string{}
 
