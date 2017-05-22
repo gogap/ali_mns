@@ -11,8 +11,10 @@ import (
 
 type appConf struct {
 	Url             string `json:"url"`
+	Queue           string `json:"queue"`
 	AccessKeyId     string `json:"access_key_id"`
 	AccessKeySecret string `json:"access_key_secret"`
+	Delete          bool   `json:"delete"`
 }
 
 func main() {
@@ -30,19 +32,7 @@ func main() {
 		conf.AccessKeyId,
 		conf.AccessKeySecret)
 
-	msg := ali_mns.MessageSendRequest{
-		MessageBody:  []byte("hello gogap/ali_mns"),
-		DelaySeconds: 0,
-		Priority:     8}
-
-	queue := ali_mns.NewMNSQueue("test", client)
-	ret, err := queue.SendMessage(msg)
-
-	if err != nil {
-		logs.Error(err)
-	} else {
-		logs.Pretty("response:", ret)
-	}
+	queue := ali_mns.NewMNSQueue(conf.Queue, client)
 
 	respChan := make(chan ali_mns.MessageReceiveResponse)
 	errChan := make(chan error)
@@ -51,17 +41,11 @@ func main() {
 			select {
 			case resp := <-respChan:
 				{
-					logs.Pretty("response:", resp)
-					logs.Debug("change the visibility: ", resp.ReceiptHandle)
-					if ret, e := queue.ChangeMessageVisibility(resp.ReceiptHandle, 5); e != nil {
-						logs.Error(e)
-					} else {
-						logs.Pretty("visibility changed", ret)
-					}
-
-					logs.Debug("delete it now: ", resp.ReceiptHandle)
-					if e := queue.DeleteMessage(resp.ReceiptHandle); e != nil {
-						logs.Error(e)
+					logs.Pretty("message:", string(resp.MessageBody))
+					if conf.Delete {
+						if e := queue.DeleteMessage(resp.ReceiptHandle); e != nil {
+							logs.Error(e)
+						}
 					}
 				}
 			case err := <-errChan:

@@ -52,6 +52,11 @@ func NewMNSQueue(name string, client MNSClient, qps ...int32) AliMNSQueue {
 	queue.qpsLimit = DefaultQPSLimit
 	queue.decoder = NewAliMNSDecoder()
 
+	var attr QueueAttribute
+	if _, err := send(client, queue.decoder, GET, nil, nil, "queues/"+name, &attr); err != nil {
+		panic(err)
+	}
+
 	if qps != nil && len(qps) == 1 && qps[0] > 0 {
 		queue.qpsLimit = qps[0]
 	}
