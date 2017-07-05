@@ -62,6 +62,7 @@ type CreateQueueRequest struct {
 
 type MessageReceiveResponse struct {
 	MessageResponse
+	MessageId        string      `xml:"MessageId" json:"message_id"`
 	ReceiptHandle    string      `xml:"ReceiptHandle" json:"receipt_handle"`
 	MessageBodyMD5   string      `xml:"MessageBodyMD5" json:"message_body_md5"`
 	MessageBody      Base64Bytes `xml:"MessageBody" json:"message_body"`
