@@ -24,6 +24,10 @@ const (
 	DefaultTimeout int64 = 35
 )
 
+var (
+	TimeNowFunc = time.Now
+)
+
 type Method string
 
 var (
@@ -157,7 +161,7 @@ func (p *AliMNSClient) Send(method Method, headers map[string]string, message in
 	headers[MQ_VERSION] = version
 	headers[CONTENT_TYPE] = "application/xml"
 	headers[CONTENT_MD5] = base64.StdEncoding.EncodeToString([]byte(strMd5))
-	headers[DATE] = time.Now().UTC().Format(http.TimeFormat)
+	headers[DATE] = now().UTC().Format(http.TimeFormat)
 
 	if authHeader, e := p.authorization(method, headers, fmt.Sprintf("/%s", resource)); e != nil {
 		err = ERR_GENERAL_AUTH_HEADER_FAILED.New(errors.Params{"err": e})

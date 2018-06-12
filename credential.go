@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/gogap/errors"
 )
@@ -47,7 +46,7 @@ func (p *AliMNSCredential) Signature(method Method, headers map[string]string, r
 
 	contentMD5 := ""
 	contentType := ""
-	date := time.Now().UTC().Format(http.TimeFormat)
+	date := now().UTC().Format(http.TimeFormat)
 
 	if v, exist := headers[CONTENT_MD5]; exist {
 		contentMD5 = v

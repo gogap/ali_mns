@@ -2,7 +2,6 @@ package ali_mns
 
 import (
 	"sync/atomic"
-	"time"
 )
 
 type QPSMonitor struct {
@@ -12,7 +11,7 @@ type QPSMonitor struct {
 }
 
 func (p *QPSMonitor) Pulse() {
-	index := int32(time.Now().Second()) % p.delaySecond
+	index := int32(now().Second()) % p.delaySecond
 
 	if p.latestIndex != index {
 		atomic.StoreInt32(&p.latestIndex, index)

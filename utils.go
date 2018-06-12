@@ -2,6 +2,7 @@ package ali_mns
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gogap/errors"
 )
@@ -38,4 +39,12 @@ func send(client MNSClient, decoder MNSDecoder, method Method, headers map[strin
 	}
 
 	return
+}
+
+func now() time.Time {
+	if TimeNowFunc == nil {
+		return time.Now()
+	}
+
+	return TimeNowFunc()
 }
