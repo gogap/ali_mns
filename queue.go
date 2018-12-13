@@ -48,7 +48,7 @@ func NewMNSQueue(name string, client MNSClient, qps ...int32) AliMNSQueue {
 	queue := new(MNSQueue)
 	queue.client = client
 	queue.name = name
-	queue.stopChan = make(chan bool)
+	queue.stopChan = make(chan bool, 1)
 	queue.qpsLimit = DefaultQPSLimit
 	queue.decoder = NewAliMNSDecoder()
 
